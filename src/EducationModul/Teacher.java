@@ -12,122 +12,163 @@ import java.util.*;
 public class Teacher {
     String name;
     List<Group> groupList=new ArrayList<Group>();
+
+    List<Course>courseList=new ArrayList<Course>();
+
+
+
     Teacher(String name){
         this.name=name;
     }
+    boolean addCourse(String name){
+        for (var tempGroup:groupList){
+            for (var tempCourse:tempGroup.listCourse) {
+                boolean cheackLesson = isCheckingCourse(name);
+                if (tempCourse.name.equals(name) & !cheackLesson) {
+                    courseList.add(tempCourse);
+                }
+            }
+        }
+        return true;
+    }
+
     boolean addGroup(Group group){
         if(groupList.contains(group)){
             return true;
         }
         return groupList.add(group);
     }
+    boolean removeGroup(Group group){
+        if(groupList.contains(group)){
+            return true;
+        }
+        return groupList.remove(group);
+    }
+
     public Student searchStudent(String name,int numberGroup) {
+        Student result=null;
         for (var tempGroup:groupList) {
             if(tempGroup.numberGroup==numberGroup){
                 for(var tempStudent:tempGroup.listStudent){
-                    if(tempStudent.name.contains(name)){
-                        return tempStudent;
+                    if(tempStudent.name.equals(name)){
+                        result = tempStudent;
                     }
                 }
             }
         }
-        return null;
+        return result;
     }
-
-    public Course searchLesson(String name,int numberGroup) {
-        for (var tempGroup:groupList) {
-            if(tempGroup.numberGroup==numberGroup){
-                for (var tempCourse:tempGroup.listCourse) {
-                    if(tempCourse.name.contains(name)){
-                        return tempCourse;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
 
     void estimateStudentPractice(float assessment,String name,int numberGroup,String courseName) {
 
-            Student tempStudent=searchStudent(name,numberGroup);
+        Student tempStudent=searchStudent(name,numberGroup);
+        boolean checkingCourse = isCheckingCourse(courseName);
+        if(checkingCourse) {
+            if (tempStudent != null) {
+                addEstimate(assessment,tempStudent,findLesson(courseName));
+            } else {
+                System.out.println("Student wasn't found");
+            }
+        }
+        else{
+            System.out.println("You don't have access to this lesson");
+        }
+    }
 
-            if(tempStudent!=null){
-                for (var tempCourse:tempStudent.courseList)
-                {
-                    if(tempCourse.name.contains(courseName)) {
-                        for (Map.Entry<TypeLesson,Integer>item:tempCourse.divider.entrySet()) {
-                            if(item.getKey().name()=="Practic") {
-                                tempCourse.currentAssessment += item.getKey().estimate(assessment);
-                            }
-                        }
+    Course findLesson(String courseName) {
+        Course result=null;
+        for (var tempGroup : groupList) {
+            for (var tempCourse:tempGroup.listCourse) {
+                if (tempCourse.name.equals(courseName)) {
+                    return tempCourse;
+                }
+            }
+        }
+        return result;
+    }
+
+    void addEstimate(float assessment, Student tempStudent, Course tempCourse) {
+        for (Map.Entry<TypeLesson, Integer> item : tempCourse.divider.entrySet()) {
+            if (item.getKey().name().equals("Practic")) {
+                for (Map.Entry<Student, Float> tempValue : tempCourse.gradeBook.entrySet()) {
+                    if (tempValue.getKey().equals(tempStudent)) {
+                        tempValue.setValue(tempValue.getValue() + item.getKey().estimate(assessment));
                     }
                 }
-            } else{
-            System.out.println("Student wasn't found");
+            }
         }
+    }
+
+    private boolean isCheckingCourse(String courseName) {
+        boolean result=false;
+        for (var tempCourse : courseList) {
+            if (tempCourse.name.equals(courseName)) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     void delAssessmentPractice(float assessment,String name,int numberGroup,String courseName) {
 
         Student tempStudent=searchStudent(name,numberGroup);
-
-        if(tempStudent!=null){
-            for (var tempCourse:tempStudent.courseList)
-            {
-                if(tempCourse.name.contains(courseName)) {
-                    for (Map.Entry<TypeLesson,Integer>item:tempCourse.divider.entrySet()) {
-                        if(item.getKey().name()=="Practic") {
-                            if(tempCourse.currentAssessment>=assessment) {
-                                tempCourse.currentAssessment -= item.getKey().estimate(assessment);
-                            }
-                        }
-                    }
-                }
+        boolean checkingCourse = isCheckingCourse(courseName);
+        if(checkingCourse) {
+            if (tempStudent != null) {
+                runInMap(assessment, tempStudent, findLesson(courseName));
+            } else {
+                System.out.println("Student wasn't found");
             }
-        } else{
-            System.out.println("Student wasn't found");
+        }
+        else {
+            System.out.println("You don't have access to this lesson");
         }
     }
 
-    List<Student>findStudentCourse(String name){
-        List <Student>students=new ArrayList<Student>();
+    private void runInMap(float assessment, Student tempStudent, Course tempCourse) {
+        for (Map.Entry<TypeLesson, Integer> item : tempCourse.divider.entrySet()) {
+            if (item.getKey().name().equals("Practic")) {
+                reduceAsseccment(assessment, tempStudent, tempCourse, item);
+            }
+        }
+    }
+
+    private void reduceAsseccment(float assessment, Student tempStudent, Course tempCourse, Map.Entry<TypeLesson, Integer> item) {
+        for (Map.Entry<Student, Float> tempValue : tempCourse.gradeBook.entrySet()) {
+            if (tempValue.getKey().equals(tempStudent)) {
+                if (tempValue.getValue() >= assessment) {
+                    tempValue.setValue(tempValue.getValue() - item.getKey().estimate(assessment));
+                }
+            }
+        }
+    }
+
+    List<Course> findGroupCourse(String name){
+        List <Course> courses=new ArrayList<>();
         for (var tempGroup:groupList) {
-            for (var tempCourse:tempGroup.listCourse){
-                if(tempCourse.name.contains(name)){
-                    students.addAll(tempGroup.listStudent);
-                }
-            }
-        }
-        return students;
-    }
-    void sortStudent(String name) {
-        List<Student> temporaryStudent = findStudentCourse(name);
-        if (temporaryStudent != null) {
-            Student temp = null;
-            Comparator<Float> raiting = new Comparator<Float>() {
-                @Override
-                public int compare(Float o1, Float o2) {
-                    return (int) (o2 - o1);
-                }
-            };
-
-            for (int i = 0; i < temporaryStudent.size(); i++) {
-                for (int j = 0; j < temporaryStudent.size() - i - 1; j++) {
-                    if (raiting.compare(temporaryStudent.get(j).courseList.get(i).getCurrentAssessment(), temporaryStudent.get(j+1).courseList.get(i).getCurrentAssessment()) > 0) {
-                        temp = temporaryStudent.get(j);
-                        temporaryStudent.set(j, temporaryStudent.get(j + 1));
-                        temporaryStudent.set(j + 1, temp);
+                for (var tempLesson : tempGroup.listCourse) {
+                    if (tempLesson.name.equals(name)) {
+                        courses.add(tempLesson);
                     }
-
                 }
-            }
-            int i=0;
-            for (var tempStudent:temporaryStudent) {
-                System.out.println(tempStudent.name+" "+tempStudent.courseList.get(i).name+" "+tempStudent.courseList.get(i).currentAssessment);
-            }
-
         }
+        return courses;
     }
 
-}
+    void sortStudent(String name) {
+        List<Course>tempCourses = findGroupCourse(name);
+        Map<Student,Float>tempMap=new HashMap<>();
+        if (courseList.size() > 0) {
+            for (var tempCourse:tempCourses) {
+                tempMap.putAll(tempCourse.gradeBook);
+            }
+            System.out.println("Course:"+name);
+            tempMap.entrySet().stream().sorted(Map.Entry.<Student, Float>comparingByValue().reversed()).forEach((key)->System.out.println("Student"+" "+key.getKey().name+" Assessment: "+key.getValue()));
+
+        }
+
+    }
+    }
+
+

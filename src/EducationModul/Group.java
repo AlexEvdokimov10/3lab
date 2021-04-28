@@ -2,7 +2,9 @@ package EducationModul;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Group {
     List<Student> listStudent=new ArrayList<>();
@@ -21,15 +23,22 @@ public class Group {
                 return true;
             }
         }
-        return listCourse.add(new Course(name,alltime));
+        listCourse.add(new Course(name,alltime));
+        for(var tempStudent:listStudent) {
+            for (var tempCourse : listCourse) {
+                tempCourse.gradeBook.put(tempStudent, 0.f);
+            }
+        }
+        return false;
     }
-    boolean addStudent(String name) throws IOException, ClassNotFoundException {
+
+    boolean addStudent(String name){
             for (var tempGroup : listStudent) {
                 if (tempGroup.name.contains(name)) {
                     return true;
                 }
             }
-            return listStudent.add(new Student(name, numberGroup,listCourse));
+            return listStudent.add(new Student(name, numberGroup));
 
     }
 
@@ -41,8 +50,5 @@ public class Group {
         }
         return false;
     }
-
-
-        // TODO: 14.04.2021 перевірити на відсутність студентів с таким ім'ям в групі
 
 }
